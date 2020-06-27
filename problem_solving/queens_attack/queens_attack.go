@@ -1,7 +1,5 @@
 package queens_attack
 
-import "sync"
-
 const (
 	RightDiagonal       = 1
 	LeftDiagonal        = 2
@@ -9,93 +7,163 @@ const (
 	VerticalDirection   = 4
 )
 
-type ticker func(posX int32, posY int32, direction int32) (int32, int32)
+func Abs(x int32) int32 {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func Min(x1, x2 int32) int32 {
+	if x1 > x2 {
+		return x2
+	}
+	return x1
+}
 
 // Complete the queensAttack function below.
 //https://www.hackerrank.com/challenges/queens-attack-2/problem
 func queensAttack(sizeX int32, obsCount int32, posX int32, posY int32, obstacles [][]int32) int32 {
-	var wg sync.WaitGroup
-	countersChan := make(chan int32, 8)
-	sizeY := sizeX
-	counter := func(posX int32, posY int32, sizeX int32, sizeY int32, direction int32, fn ticker) {
-		wg.Add(1)
-		defer wg.Done()
-
-		if posX == 0 {
-			posX = sizeX
-		}
-		if posY == 0 {
-			posY = sizeY
-		}
-		var counter int32
-	Exit:
-		for {
-			posX, posY = fn(posX, posY, direction)
-
-			for _, obstacle := range obstacles {
-				obX, obY := obstacle[0], obstacle[1]
-				if posX == obX && posY == obY {
-					break Exit
-				}
-			}
-			if posX < 1 || posX > sizeX || posY < 1 || posY > sizeY {
-				break Exit
-			}
-			counter++
-		}
-		countersChan <- counter
+	if posY == 0 {
+		posY = 1
+	}
+	if posX == 0 {
+		posY = 1
 	}
 
-	go counter(posX, posY, sizeX, sizeY, RightDiagonal, tickRightByDirection)
-	go counter(posX, posY, sizeX, sizeY, RightDiagonal, tickLeftByDirection)
-	go counter(posX, posY, sizeX, sizeY, LeftDiagonal, tickRightByDirection)
-	go counter(posX, posY, sizeX, sizeY, LeftDiagonal, tickLeftByDirection)
-	go counter(posX, posY, sizeX, sizeY, HorizontalDirection, tickRightByDirection)
-	go counter(posX, posY, sizeX, sizeY, HorizontalDirection, tickLeftByDirection)
-	go counter(posX, posY, sizeX, sizeY, VerticalDirection, tickRightByDirection)
-	go counter(posX, posY, sizeX, sizeY, VerticalDirection, tickLeftByDirection)
+	//get all direction spaces from posX,posY
+	rightSpace := sizeX - posX
+	leftSpace := Abs(rightSpace-sizeX) - 1
+	upSpace := sizeX - posY
+	downSpace := Abs(upSpace-sizeX) - 1
 
-	wg.Wait()
-
-	var queenPossibleSteps int32
-	for i := 0; i < 8; i++ {
-		queenPossibleSteps += <-countersChan
+	minSpace := Min(upSpace, rightSpace)
+	rightDiagonalUp := point{
+		posX + minSpace,
+		posY + minSpace,
 	}
-	close(countersChan)
 
-	return queenPossibleSteps
+	minSpace = Min(downSpace, leftSpace)
+	rightDiagonalDown := point{
+		posX - minSpace,
+		posY - minSpace,
+	}
+
+	minSpace = Min(upSpace, leftSpace)
+	leftDiagonalUp := point{
+		posX - minSpace,
+		posY + minSpace,
+	}
+
+	minSpace = Min(downSpace, rightSpace)
+	leftDiagonalDown := point{
+		posX + minSpace,
+		posY - minSpace,
+	}
+
+	_, _ = leftDiagonalDown, leftDiagonalUp
+
+	currentPoint := point{posX, posY}
+	lines := []vector2d{
+		{currentPoint, rightDiagonalDown, RightDiagonal, nil},
+		{currentPoint, rightDiagonalUp, RightDiagonal, nil},
+		{currentPoint, leftDiagonalDown, LeftDiagonal, nil},
+		{currentPoint, leftDiagonalUp, LeftDiagonal, nil},
+		{currentPoint, point{1, posY}, HorizontalDirection, nil},
+		{currentPoint, point{sizeX, posY}, HorizontalDirection, nil},
+		{currentPoint, point{posX, sizeX}, VerticalDirection, nil},
+		{currentPoint, point{posX, 1}, VerticalDirection, nil},
+	}
+
+	for _, obstacle := range obstacles {
+		obstaclePoint := point{obstacle[0], obstacle[1]}
+		for index, line := range lines {
+			if line.isObstacleOnVector(obstaclePoint) {
+				line.addNewObstacle(obstaclePoint)
+			}
+			lines[index] = line
+		}
+	}
+
+	var result int32
+	for _, line := range lines {
+		result += line.getSizeWithObstacles()
+	}
+
+	return result
 }
 
-func tickRightByDirection(posX int32, posY int32, direction int32) (int32, int32) {
-	switch direction {
-	case RightDiagonal:
-		posX++
-		posY++
-	case LeftDiagonal:
-		posX++
-		posY--
-	case HorizontalDirection:
-		posX++
-	case VerticalDirection:
-		posY++
-	}
-
-	return posX, posY
+type point struct {
+	x int32
+	y int32
 }
 
-func tickLeftByDirection(posX int32, posY int32, direction int32) (int32, int32) {
-	switch direction {
-	case RightDiagonal:
-		posX--
-		posY--
-	case LeftDiagonal:
-		posX--
-		posY++
-	case HorizontalDirection:
-		posX--
-	case VerticalDirection:
-		posY--
+type vector2d struct {
+	x0        point
+	x1        point
+	lineType  int32
+	obstacles []point
+}
+
+func (v *vector2d) getSizeWithObstacles() int32 {
+	if len(v.obstacles) == 0 {
+		size := v.getSize() - 1
+		return size
+	}
+	var minDistToObstacle int32
+	for _, obstaclePoint := range v.obstacles {
+		var distFromPosToObstacle int32
+		if v.lineType == VerticalDirection {
+			distFromPosToObstacle = Abs(v.x0.y - obstaclePoint.y)
+		} else {
+			distFromPosToObstacle = Abs(v.x0.x - obstaclePoint.x)
+		}
+
+		if minDistToObstacle == 0 {
+			minDistToObstacle = distFromPosToObstacle
+		} else if distFromPosToObstacle < minDistToObstacle {
+			minDistToObstacle = distFromPosToObstacle
+		}
 	}
 
-	return posX, posY
+	return minDistToObstacle - 1
+}
+
+func (v *vector2d) getSize() int32 {
+	var size int32
+	if v.lineType == VerticalDirection {
+		size = Abs(v.x0.y-v.x1.y) + 1
+	} else {
+		size = Abs(v.x0.x-v.x1.x) + 1
+	}
+	return size
+}
+
+func (v *vector2d) isObstacleOnVector(oPoint point) bool {
+	//check if obstacle between x0 and x1, y0 and y1
+	obstacleOnX := (oPoint.x >= v.x0.x && oPoint.x <= v.x1.x) ||
+		(oPoint.x >= v.x1.x && oPoint.x <= v.x0.x)
+	obstacleOnY := (oPoint.y >= v.x0.y && oPoint.y <= v.x1.y) ||
+		(oPoint.y >= v.x1.y && oPoint.y <= v.x0.y)
+	posEqualObstacle := v.x0.x == oPoint.x && v.x0.y == oPoint.y
+	if !obstacleOnX || !obstacleOnY || posEqualObstacle {
+		return false
+	}
+	switch v.lineType {
+	case RightDiagonal, LeftDiagonal:
+		return Abs(v.x0.x-oPoint.x) == Abs(v.x0.y-oPoint.y)
+	case HorizontalDirection:
+		return v.x0.y == oPoint.y
+	case VerticalDirection:
+		return v.x0.x == oPoint.x
+	default:
+		panic("unknown vector type")
+	}
+}
+
+func (v *vector2d) addNewObstacle(obstaclePoint point) {
+	if v.obstacles == nil {
+		v.obstacles = []point{}
+	}
+	v.obstacles = append(v.obstacles, obstaclePoint)
 }

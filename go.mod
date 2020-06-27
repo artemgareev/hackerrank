@@ -1,3 +1,5 @@
-module github.com/stretchr/testify
+module github.com/artemgareev/hackerrank
 
 go 1.13
+
+require github.com/stretchr/testify v1.6.1
