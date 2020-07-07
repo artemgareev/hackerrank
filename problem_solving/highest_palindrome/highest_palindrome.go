@@ -1,6 +1,8 @@
 package highest_palindrome
 
-import "strconv"
+import (
+	"strconv"
+)
 
 //Complete the highestValuePalindrome function below.
 func highestValuePalindrome(s string, n int32, k int32) string {
@@ -23,32 +25,16 @@ func highestValuePalindrome(s string, n int32, k int32) string {
 	rightPart = reverseInts(rightPart)
 
 	//check if we can make palindrome for a given 'k'
-	canMakePalindrome, freeReplacementCount := canMakePalindrome(leftPart, rightPart, int(k))
+	canMakePalindrome, needChange1, needChange2 := canMakePalindrome(leftPart, rightPart, int(k))
 	if !canMakePalindrome {
 		return "-1"
 	}
 
-	//just return palindrome with the highest replacements possible
-	if freeReplacementCount == 0 {
-		tL, tR, tC := tryMakePalindrome(leftPart, rightPart, freeReplacementCount)
-		if tC == 0 {
-			tR = reverseInts(tR)
-			return makeResult(source, tL, tR)
-		}
-	}
+	_, _ = needChange1, needChange2
 
-	allReplacementCount := k
+	freeReplacementCount := int(k)
 	var i = 0
-	for freeReplacementCount > 0 && i < len(leftPart) {
-		if len(leftPart)-1 == i && allReplacementCount%2 == 0 {
-			rightPart[i] = 9
-			leftPart[i] = 9
-			freeReplacementCount -= 2
-			allReplacementCount -= 2
-
-			i++
-			continue
-		}
+	for k > 0 && i < len(leftPart) {
 		if leftPart[i] == 9 && rightPart[i] == 9 {
 			i++
 			continue
@@ -59,27 +45,37 @@ func highestValuePalindrome(s string, n int32, k int32) string {
 			} else {
 				leftPart[i] = 9
 			}
-			freeReplacementCount -= 1
-			allReplacementCount -= 1
+			freeReplacementCount--
+			needChange1--
 			i++
 			continue
 		}
-		if freeReplacementCount >= 2 {
+
+		leftToChange := len(leftPart) - i - 1
+		canReplace2Numbers := freeReplacementCount-leftToChange >= 0
+		if freeReplacementCount >= 2 && needChange2 > 0 && canReplace2Numbers {
 			rightPart[i] = 9
 			leftPart[i] = 9
 			freeReplacementCount -= 2
-			allReplacementCount -= 2
+			needChange2--
 
 			i++
 			continue
+		} else {
+			if leftPart[i] != rightPart[i] {
+				if leftPart[i] > rightPart[i] {
+					rightPart[i] = leftPart[i]
+				} else {
+					leftPart[i] = rightPart[i]
+				}
+				freeReplacementCount -= 1
+			}
+
+			i++
 		}
-		i++
 	}
 
-	leftPart, rightPart, _ = tryMakePalindrome(leftPart, rightPart, freeReplacementCount)
-	//_ = abc
-
-	//making the highest palindrome
+	//if we have free replacements - make middle number 9
 	if freeReplacementCount > 0 && len(s)%2 != 0 {
 		source[len(source)/2] = 9
 	}
@@ -107,35 +103,23 @@ func makeResult(source []int, leftPart []int, rightPart []int) string {
 	return resultString
 }
 
-func tryMakePalindrome(leftPart []int, rightPart []int, replaceCount int) ([]int, []int, int) {
-	leftReplacementCount := replaceCount
+func canMakePalindrome(leftPart []int, rightPart []int, replaceCount int) (bool, int, int) {
+	var minimalChangesNeed int
+	var needChange1 int
+	var needChange2 int
+
 	for i := 0; i < len(leftPart); i++ {
-		if leftPart[i] == rightPart[i] {
-			continue
+		if leftPart[i] == 9 || rightPart[i] == 9 {
+			needChange1++
+		} else if leftPart[i] != rightPart[i] || leftPart[i] != 9 {
+			needChange2++
 		}
-
-		leftReplacementCount--
-		if leftPart[i] > rightPart[i] {
-			rightPart[i] = leftPart[i]
-		} else {
-			leftPart[i] = rightPart[i]
-		}
-	}
-
-	return leftPart, rightPart, leftReplacementCount
-}
-
-func canMakePalindrome(leftPart []int, rightPart []int, replaceCount int) (bool, int) {
-	var notPalindromeCount int
-	for i := 0; i < len(leftPart); i++ {
 		if leftPart[i] != rightPart[i] {
-			if leftPart[i] != 9 && rightPart[i] != 9 {
-				notPalindromeCount++
-			}
+			minimalChangesNeed++
 		}
-	}
 
-	return (replaceCount - notPalindromeCount) >= 0, replaceCount - notPalindromeCount
+	}
+	return (replaceCount - minimalChangesNeed) >= 0, needChange1, needChange2
 }
 
 func reverseInts(input []int) []int {

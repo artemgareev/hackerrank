@@ -18,8 +18,16 @@ func TestPalindrome(t *testing.T) {
 	assert.Equal(t, highestValuePalindrome("092282", 0, 3), "992299")
 	assert.Equal(t, highestValuePalindrome("0011", 0, 1), "-1")
 	assert.Equal(t, "99399", highestValuePalindrome("11331", 0, 4))
+	assert.Equal(t, "99999", highestValuePalindrome("11922", 0, 4))
+	assert.Equal(t, "9990999", highestValuePalindrome("1110229", 0, 5))
 	assert.Equal(t, highestValuePalindrome("5", 0, 1), "9")
-	assert.Equal(t, highestValuePalindrome("12321", 0, 1), "12921")
+	assert.Equal(t, "12921", highestValuePalindrome("12321", 0, 1))
+	assert.Equal(t, "99111199", highestValuePalindrome("11111111", 0, 4))
+	assert.Equal(t, highestValuePalindrome("11111111", 0, 5), "99111199")
+	assert.Equal(t, highestValuePalindrome("1111111", 0, 5), "9919199")
+	assert.Equal(t, highestValuePalindrome("11111111", 0, 1), "11111111")
+	assert.Equal(t, highestValuePalindrome("1111111", 0, 1), "1119111")
+
 }
 
 func TestPalindromeFromFixtures(t *testing.T) {
@@ -52,9 +60,9 @@ func assertFromFile(t *testing.T, testCasePath string, testCaseExpectedPath stri
 	checkError(err)
 
 	df1, df2 := difference(result, string(expectedResult))
-	fmt.Printf("%s\n%s\n", df1, df2)
+	fmt.Printf("%d\n%d\n", len(df1), len(df2))
 
-	assert.Equal(t, result, string(expectedResult))
+	assert.Equal(t, string(expectedResult), result)
 }
 
 func readLine(reader *bufio.Reader) string {
