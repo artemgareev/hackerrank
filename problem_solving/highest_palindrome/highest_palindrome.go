@@ -4,6 +4,7 @@ import (
 	"strconv"
 )
 
+//https://www.hackerrank.com/challenges/richie-rich/problem
 //Complete the highestValuePalindrome function below.
 func highestValuePalindrome(s string, n int32, k int32) string {
 	source := []int{}
@@ -25,16 +26,18 @@ func highestValuePalindrome(s string, n int32, k int32) string {
 	rightPart = reverseInts(rightPart)
 
 	//check if we can make palindrome for a given 'k'
-	canMakePalindrome, needChange1, needChange2 := canMakePalindrome(leftPart, rightPart, int(k))
+	canMakePalindrome, needChange1, needChange2, equalNumbers := canMakePalindrome(leftPart, rightPart, int(k))
 	if !canMakePalindrome {
 		return "-1"
 	}
 
-	_, _ = needChange1, needChange2
-
 	freeReplacementCount := int(k)
 	var i = 0
+	var skippedEqualNumbers int
 	for k > 0 && i < len(leftPart) {
+		if leftPart[i] == rightPart[i] {
+			skippedEqualNumbers++
+		}
 		if leftPart[i] == 9 && rightPart[i] == 9 {
 			i++
 			continue
@@ -52,8 +55,8 @@ func highestValuePalindrome(s string, n int32, k int32) string {
 		}
 
 		leftToChange := len(leftPart) - i - 1
-		canReplace2Numbers := freeReplacementCount-leftToChange >= 0
-		if freeReplacementCount >= 2 && needChange2 > 0 && canReplace2Numbers {
+		canReplace2Numbers := freeReplacementCount-leftToChange+equalNumbers-skippedEqualNumbers-2 >= 0
+		if needChange2 > 0 && canReplace2Numbers {
 			rightPart[i] = 9
 			leftPart[i] = 9
 			freeReplacementCount -= 2
@@ -103,10 +106,11 @@ func makeResult(source []int, leftPart []int, rightPart []int) string {
 	return resultString
 }
 
-func canMakePalindrome(leftPart []int, rightPart []int, replaceCount int) (bool, int, int) {
+func canMakePalindrome(leftPart []int, rightPart []int, replaceCount int) (bool, int, int, int) {
 	var minimalChangesNeed int
 	var needChange1 int
 	var needChange2 int
+	var equalNumbers int
 
 	for i := 0; i < len(leftPart); i++ {
 		if leftPart[i] == 9 || rightPart[i] == 9 {
@@ -116,10 +120,12 @@ func canMakePalindrome(leftPart []int, rightPart []int, replaceCount int) (bool,
 		}
 		if leftPart[i] != rightPart[i] {
 			minimalChangesNeed++
+		} else {
+			equalNumbers++
 		}
 
 	}
-	return (replaceCount - minimalChangesNeed) >= 0, needChange1, needChange2
+	return (replaceCount - minimalChangesNeed) >= 0, needChange1, needChange2, equalNumbers
 }
 
 func reverseInts(input []int) []int {

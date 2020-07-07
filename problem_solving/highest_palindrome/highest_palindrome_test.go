@@ -23,10 +23,10 @@ func TestPalindrome(t *testing.T) {
 	assert.Equal(t, highestValuePalindrome("5", 0, 1), "9")
 	assert.Equal(t, "12921", highestValuePalindrome("12321", 0, 1))
 	assert.Equal(t, "99111199", highestValuePalindrome("11111111", 0, 4))
-	assert.Equal(t, highestValuePalindrome("11111111", 0, 5), "99111199")
-	assert.Equal(t, highestValuePalindrome("1111111", 0, 5), "9919199")
-	assert.Equal(t, highestValuePalindrome("11111111", 0, 1), "11111111")
-	assert.Equal(t, highestValuePalindrome("1111111", 0, 1), "1119111")
+	assert.Equal(t, "99111199", highestValuePalindrome("11111111", 0, 5))
+	assert.Equal(t, "9919199", highestValuePalindrome("1111111", 0, 5))
+	assert.Equal(t, "11111111", highestValuePalindrome("11111111", 0, 1))
+	assert.Equal(t, "1119111", highestValuePalindrome("1111111", 0, 1))
 
 }
 
