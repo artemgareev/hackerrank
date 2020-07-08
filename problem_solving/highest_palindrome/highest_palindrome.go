@@ -33,7 +33,7 @@ func highestValuePalindrome(s string, n int32, k int32) string {
 	freeReplacementCount := int(k)
 	var i = 0
 	var skippedEqualNumbers int
-	for k > 0 && i < len(leftPart) {
+	for freeReplacementCount > 0 && i < len(leftPart) {
 		if leftPart[i] == rightPart[i] {
 			skippedEqualNumbers++
 		}
@@ -54,9 +54,11 @@ func highestValuePalindrome(s string, n int32, k int32) string {
 			continue
 		}
 
-		leftToChange := len(leftPart) - i - 1
-		canReplace2Numbers := freeReplacementCount-leftToChange+equalNumbersCount-skippedEqualNumbers-2 >= 0
-		if canReplace2Numbers {
+		numbersToProcessLeft := len(leftPart) - i - 1
+		equalNumbersLeft := equalNumbersCount - skippedEqualNumbers
+
+		//replace 2 numbers, until we reach min 'freeReplacementCount' to make palindrome
+		if freeReplacementCount-numbersToProcessLeft+equalNumbersLeft-2 >= 0 {
 			rightPart[i] = 9
 			leftPart[i] = 9
 			freeReplacementCount -= 2
